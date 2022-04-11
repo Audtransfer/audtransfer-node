@@ -5,7 +5,6 @@ const PORT = 5000;
 const express = require('express');
 const request = require('request');
 const cors = require('cors');
-const querystring = require('querystring');
 const cookieParser = require('cookie-parser');
 
 //Setup APP
@@ -17,8 +16,9 @@ app.use(express.static(__dirname))
 //Importants Vars
 const frontEnd = "http://localhost:3000/"
 	
-// ----- Spotify Endpoints -----
+// ----- SPOTIFY ENDPOINTS -----
 const spotifyAuthEndpoint = "https://accounts.spotify.com/authorize?";
+var stateKey = 'spotify_auth_state';
 const scopes = [
 	"user-read-private",
 	"user-read-email",
@@ -33,13 +33,11 @@ const generateRandomString = (length) => {
 	var text = '';
 	var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
-	for (var i = 0; i < length; i++) {
+	for(var i = 0; i < length; i++) {
 		text += possible.charAt(Math.floor(Math.random() * possible.length));
 	}
 	return text;
 };
-
-var stateKey = 'spotify_auth_state';
 	
 //variáveis de ambiente spotify
 const client_id = process.env.SPOTIFY_CLIENT_ID;
@@ -50,13 +48,13 @@ app.get("/loginSpotify", (req, res) => {
   var state = generateRandomString(16);
   res.cookie(stateKey, state);
 
-  res.redirect(spotifyAuthEndpoint + querystring.stringify({
-    response_type: 'code',
-    client_id: client_id,
-    scope: scopes,
-    redirect_uri: redirect_uri,
-    state: state
-  }));
+  res.redirect(spotifyAuthEndpoint +
+		"response_type=code" +
+		"&client_id=" + client_id +
+    "&scope=" + scopes +
+    "&redirect_uri=" + redirect_uri +
+    "&state=" + state
+  );
 })
 
 app.get("/spotifyCallback", (req, res) => {
@@ -65,7 +63,7 @@ app.get("/spotifyCallback", (req, res) => {
   var storedState = req.cookies ? req.cookies[stateKey] : null;
 
   if (state === null || state !== storedState) {
-    res.redirect('/#' + querystring.stringify({ error: 'state_mismatch' }));
+    res.redirect("/#error=state_mismatch");
   } 
 	else {
     res.clearCookie(stateKey);
@@ -92,7 +90,7 @@ app.get("/spotifyCallback", (req, res) => {
         };
 
         request.get(options, (error, response, body) => { console.log(body.id) });
-				
+
 				res.redirect(`${frontEnd}spotify#access_token=${access_token}&refresh_token=${refresh_token}`);
       } 
 			else { res.redirect(`${frontEnd}spotify#invalid_token`) }
@@ -100,7 +98,7 @@ app.get("/spotifyCallback", (req, res) => {
   }
 })
 
-// ----- Deezer Endpoints -----
+// ----- DEEZER ENDPOINTS -----
 
 //variáveis de ambiente deezer
 const dzr_id = process.env.DEEZER_APP_ID;
