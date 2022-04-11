@@ -1,59 +1,50 @@
+//Running Port
 const PORT = 5000;
 
+//Imports/Requires
 const express = require('express');
 const request = require('request');
 const cors = require('cors');
 const querystring = require('querystring');
 const cookieParser = require('cookie-parser');
 
-//variáveis de ambiente
-const client_id = process.env.CLIENT_ID;
-const client_secret = process.env.CLIENT_SECRET;
-const redirect_uri = process.env.REDIRECT_URI;
-const dzr_id = process.env.DZR_ID;
-const dzr_secret = process.env.DZR_SECRET;
-const dzr_redirect = process.env.DZR_REDIRECT;
+//Setup APP
+var app = express();
+app.use(express.static(__dirname))
+	.use(cors())
+	.use(cookieParser());
 
+//Importants Vars
+const frontEnd = "http://localhost:3000/"
+	
+// ----- Spotify Endpoints -----
 const spotifyAuthEndpoint = "https://accounts.spotify.com/authorize?";
 const scopes = [
-  "user-read-private",
-  "user-read-email",
-  "user-library-read",
-  "playlist-read-collaborative",
-  "playlist-read-private",
-  "playlist-modify-private",
-  "playlist-modify-public",
+	"user-read-private",
+	"user-read-email",
+	"user-library-read",
+	"playlist-read-collaborative",
+	"playlist-read-private",
+	"playlist-modify-private",
+	"playlist-modify-public",
 ].join("%20");
 
 const generateRandomString = (length) => {
-  var text = '';
-  var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	var text = '';
+	var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
-  for (var i = 0; i < length; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
+	for (var i = 0; i < length; i++) {
+		text += possible.charAt(Math.floor(Math.random() * possible.length));
+	}
+	return text;
 };
 
 var stateKey = 'spotify_auth_state';
-
-//permissões do Deezer necessárias
-const dzr_perms = [
-  "basic_access",
-  //"email",
-  //"offline_access",
-  "manage_library",
-  //"manage_community",
-  //"delete_library",
-  //"listening_history",
-].join(",");
-
-var app = express();
-app.use(express.static(__dirname))
-  .use(cors())
-  .use(cookieParser());
-
-// ----- Spotify Endpoints -----
+	
+//variáveis de ambiente spotify
+const client_id = process.env.SPOTIFY_CLIENT_ID;
+const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
+const redirect_uri = process.env.SPOTIFY_REDIRECT_URI;
 
 app.get("/loginSpotify", (req, res) => {
   var state = generateRandomString(16);
@@ -74,11 +65,9 @@ app.get("/spotifyCallback", (req, res) => {
   var storedState = req.cookies ? req.cookies[stateKey] : null;
 
   if (state === null || state !== storedState) {
-    res.redirect('/#' +
-      querystring.stringify({
-        error: 'state_mismatch'
-      }));
-  } else {
+    res.redirect('/#' + querystring.stringify({ error: 'state_mismatch' }));
+  } 
+	else {
     res.clearCookie(stateKey);
     var authOptions = {
       url: 'https://accounts.spotify.com/api/token',
@@ -87,17 +76,14 @@ app.get("/spotifyCallback", (req, res) => {
         redirect_uri: redirect_uri,
         grant_type: 'authorization_code'
       },
-      headers: {
-        'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64'))
-      },
+      headers: { 'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64')) },
       json: true
     };
 
-    request.post(authOptions, function (error, response, body) {
+    request.post(authOptions, (error, response, body) => {
       if (!error && response.statusCode === 200) {
-
-        var access_token = body.access_token,
-          refresh_token = body.refresh_token;
+        var access_token = body.access_token;
+        var refresh_token = body.refresh_token;
 
         var options = {
           url: 'https://api.spotify.com/v1/me',
@@ -105,50 +91,53 @@ app.get("/spotifyCallback", (req, res) => {
           json: true
         };
 
-        request.get(options, function (error, response, body) {
-          console.log(body.id);
-        });
-
-        res.redirect('http://localhost:3000/spotify#' +
-          querystring.stringify({
-            access_token: access_token,
-            refresh_token: refresh_token
-          }));
-      } else {
-        res.redirect('http://localhost:3000/spotify#' +
-          querystring.stringify({
-            error: 'invalid_token'
-          }));
-      }
+        request.get(options, (error, response, body) => { console.log(body.id) });
+				
+				res.redirect(`${frontEnd}spotify#access_token=${access_token}&refresh_token=${refresh_token}`);
+      } 
+			else { res.redirect(`${frontEnd}spotify#invalid_token`) }
     });
   }
 })
 
 // ----- Deezer Endpoints -----
 
-app.get("/deezerPlaceholder", (req, res) => {
-  res.json("Endpoint placeholder"); //response http
-});
+//variáveis de ambiente deezer
+const dzr_id = process.env.DEEZER_APP_ID;
+const dzr_secret = process.env.DEEZER_APP_SECRET;
+const dzr_redirect = process.env.DEEZER_APP_REDIRECT;
 
+//permissões do Deezer necessárias TODO
+const dzr_perms = [
+  "basic_access",
+  "manage_library",
+  //"email",
+  //"offline_access",
+  //"manage_community",
+  //"delete_library",
+  //"listening_history",
+].join(",");
+
+//Deezer endpoint common
+const deezerEndpoint = "https://connect.deezer.com/oauth/auth.php";
+
+//etapa 1 da autenticação
 app.get("/loginDeezer", (req, res) => {
-  //etapa 1 da autenticação
-  var urlAskPerms = `https://connect.deezer.com/oauth/auth.php?app_id=${dzr_id}&redirect_uri=${dzr_redirect}&perms=${dzr_perms}`;
-  res.redirect(urlAskPerms);
+	res.redirect(`${deezerEndpoint}?app_id=${dzr_id}&redirect_uri=${dzr_redirect}&perms=${dzr_perms}`);
 });
 
+//etapa 2 da autenticação
 app.get("/deezerCallback", (req, res) => {
-  //etapa 2 da autenticação
-  var urlAccessToken = `https://connect.deezer.com/oauth/access_token.php?app_id=${dzr_id}&secret=${dzr_secret}&code=${req.query.code}&output=json`;
   //req.query.code é o código retornado pelo Deezer ao bater no endpoint anterior
+  var urlAccessToken = `${deezerEndpoint}p?app_id=${dzr_id}&secret=${dzr_secret}&code=${req.query.code}&output=json`;
 
+	//Retorna o token para Front-End
   request.get(urlAccessToken, (error, response, body) => {
-    if (error || response.statusCode !== 200) {
-      //console.log(error.ToString())
-      return;
-    }
+    if (error || response.statusCode !== 200) return;
     var bodyJson = JSON.parse(body);
-    res.redirect(`/deezerPlaceholder#${bodyJson.access_token}`); //node retorna o token para cliente
+    res.redirect(`${frontEnd}deezer#${bodyJson.access_token}`);
   });
 });
 
+//Setup, SHOUlD ALWAYS be last
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
