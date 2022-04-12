@@ -101,12 +101,12 @@ app.get("/spotifyCallback", (req, res) => {
 // ----- DEEZER ENDPOINTS -----
 
 //variáveis de ambiente deezer
-const dzr_id = process.env.DEEZER_APP_ID;
-const dzr_secret = process.env.DEEZER_APP_SECRET;
-const dzr_redirect = process.env.DEEZER_APP_REDIRECT;
+const deezer_id = process.env.DEEZER_APP_ID;
+const deezer_secret = process.env.DEEZER_APP_SECRET;
+const deezer_redirect = process.env.DEEZER_APP_REDIRECT;
 
 //permissões do Deezer necessárias TODO
-const dzr_perms = [
+const deezer_perms = [
   "basic_access",
   "manage_library",
   //"email",
@@ -117,24 +117,24 @@ const dzr_perms = [
 ].join(",");
 
 //Deezer endpoint common
-const deezerEndpoint = "https://connect.deezer.com/oauth/auth.php";
+const deezerEndpoint = "https://connect.deezer.com/oauth/";
 
 //etapa 1 da autenticação
 app.get("/loginDeezer", (req, res) => {
-	res.redirect(`${deezerEndpoint}?app_id=${dzr_id}&redirect_uri=${dzr_redirect}&perms=${dzr_perms}`);
+	res.redirect(`${deezerEndpoint}auth.php?app_id=${deezer_id}&redirect_uri=${deezer_redirect}&perms=${deezer_perms}`);
 });
 
 //etapa 2 da autenticação
 app.get("/deezerCallback", (req, res) => {
-  //req.query.code é o código retornado pelo Deezer ao bater no endpoint anterior
-  var urlAccessToken = `${deezerEndpoint}p?app_id=${dzr_id}&secret=${dzr_secret}&code=${req.query.code}&output=json`;
-
-	//Retorna o token para Front-End
-  request.get(urlAccessToken, (error, response, body) => {
-    if (error || response.statusCode !== 200) return;
-    var bodyJson = JSON.parse(body);
-    res.redirect(`${frontEnd}deezer#${bodyJson.access_token}`);
-  });
+  // //req.query.code é o código retornado pelo Deezer ao bater no endpoint anterior
+  var callbackCode = `${deezerEndpoint}access_token.php?app_id=${deezer_id}&secret=${deezer_secret}&code=${req.query.code}&output=json`;
+	
+	// Retorna o token para Front-End
+	request.get(callbackCode, (error, response, body) =>{
+		if(error || response.statusCode !== 200) return
+		var bodyJson = JSON.parse(body);
+		res.redirect("http://localhost:3000/deezer#" + bodyJson.access_token)
+	})
 });
 
 //Setup, SHOUlD ALWAYS be last
