@@ -133,7 +133,7 @@ app.get("/deezerCallback", (req, res) => {
 	request.get(callbackCode, (error, response, body) =>{
 		if(error || response.statusCode !== 200) return
 		var bodyJson = JSON.parse(body);
-		res.redirect("http://localhost:3000/deezer#" + bodyJson.access_token)
+		res.redirect("http://localhost:3000/deezer#access_token=" + bodyJson.access_token)
 	})
 });
 
