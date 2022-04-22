@@ -137,5 +137,18 @@ app.get("/deezerCallback", (req, res) => {
 	})
 });
 
+// ----- YOUTUBE MUSIC ENDPOINTS -----
+
+//variáveis de ambiente youtube music
+const youtube_id = process.env.YOUTUBE_CLIENT_ID;
+const youtube_secret = process.env.YOUTUBE_CLIENT_SECRET;
+const youtube_redirect = process.env.YOUTUBE_REDIRECT_URI;
+
+app.get("/loginYoutube", (req, res) => {
+})
+
+app.get("/youtubeCallback", (req, res) => {
+})
+
 //Setup, SHOUlD ALWAYS be last
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
