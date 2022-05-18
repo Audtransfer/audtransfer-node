@@ -137,5 +137,41 @@ app.get("/deezerCallback", (req, res) => {
 	})
 });
 
+// DEEZER BACK-END
+const deezerApi = "https://api.deezer.com"
+
+app.get("/deezerUser", (req, res) => {
+	let userEndpoint = `${deezerApi}/user/me?output=json&access_token=${req.query.access}`
+	request.get(userEndpoint, (error, response, body) => {
+		if(error || response.statusCode !== 200) return
+		res.json(JSON.parse(body));
+	})
+})
+
+app.get("/deezerPlaylist", (req, res) => {
+	let userEndpoint = `${deezerApi}/user/${req.query.id}/playlists?output=json&access_token=${req.query.access}`
+	request.get(userEndpoint, (error, response, body) => {
+		if(error || response.statusCode !== 200) return
+		res.json(JSON.parse(body));
+	})
+})
+
+app.get("/deezerAnyPlaylist", (req, res) => {
+	const getPlaylistEndPoint = `${deezerApi}/playlist`;
+	request.get(`${getPlaylistEndPoint}/${req.query.id}`, (error, response, body) => {
+		if(error || response.statusCode !== 200) return
+		res.json(JSON.parse(body));
+	})
+})
+
+app.get("/deezerCreatePlaylist", (req,res) => {
+	let createUrl = `${deezerApi}/user/${req.query.id}/playlists?output=json&access_token=${req.query.access}&title=${req.query.title}`;
+
+	request.post(createUrl, (error, response, body) => {
+		if(error || response.statusCode !== 200) return
+		res.json(JSON.parse(body));
+	})
+})
+
 //Setup, SHOUlD ALWAYS be last
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
