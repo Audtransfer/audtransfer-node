@@ -136,5 +136,14 @@ app.get("/deezerCreatePlaylist", (req,res) => {
 	})
 })
 
+app.get("/deezerSearchTrack", (req,res) => {
+	let searchUrl = `${deezerApi}/search?q=artist:"${req.query.artist}"track:"${req.query.track}"`
+
+	request.get(searchUrl, (error, response, body) => {
+		if(error || response.statusCode !== 200) return
+		res.json(JSON.parse(body));
+	})
+})
+
 //Setup, SHOUlD ALWAYS be last
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
