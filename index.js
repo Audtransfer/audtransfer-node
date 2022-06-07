@@ -109,7 +109,7 @@ const deezer_redirect = process.env.DEEZER_APP_REDIRECT;
 const deezer_perms = [
   "basic_access",
   "manage_library",
-  "email",
+  //"email",
   //"offline_access",
   //"manage_community",
   //"delete_library",
