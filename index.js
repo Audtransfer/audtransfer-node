@@ -152,7 +152,7 @@ app.get("/loginYoutube", (req, res) => {
   res.cookie('youtube_auth_state', state);
 
   res.redirect(youtubeAuthEndpoint +
-		"scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutube" +
+		"scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutube%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutubepartner" +
 		"&include_granted_scopes=true" +
     "&state=" + state +
     "&redirect_uri=" + youtube_redirect +
