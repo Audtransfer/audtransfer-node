@@ -154,5 +154,30 @@ app.get("/deezerAddTrack", (req, res) => {
 	})
 })
 
+// ----- YOUTUBE MUSIC ENDPOINTS -----
+
+//variáveis de ambiente Youtube Music
+const youtube_id = process.env.YOUTUBE_CLIENT_ID;
+//const youtube_secret = process.env.YOUTUBE_CLIENT_SECRET; //aparentemente não é necessário para obter access_token
+const youtube_redirect = process.env.YOUTUBE_REDIRECT_URI;
+
+//permissões do Youtube necessárias TODO
+const youtubeAuthEndpoint = "https://accounts.google.com/o/oauth2/v2/auth?";
+
+app.get("/loginYoutube", (req, res) => {
+  var state = generateRandomString(16);
+  res.cookie('youtube_auth_state', state);
+
+  res.redirect(youtubeAuthEndpoint +
+		"scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutube%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutubepartner" +
+		"&include_granted_scopes=true" +
+    "&state=" + state +
+    "&redirect_uri=" + youtube_redirect +
+    "&response_type=token" +
+    "&client_id=" + youtube_id
+  );
+  //Obs: endpoint "/youtubeCallback" não é necessário
+});
+
 //Setup, SHOUlD ALWAYS be last
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
