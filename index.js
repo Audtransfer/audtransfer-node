@@ -72,11 +72,7 @@ const deezer_redirect = process.env.DEEZER_APP_REDIRECT;
 const deezer_perms = [
   "basic_access",
   "manage_library",
-  "email",
-  //"offline_access",
-  //"manage_community",
-  //"delete_library",
-  //"listening_history",
+  "email"
 ].join(",");
 
 //Deezer endpoint common
@@ -165,18 +161,14 @@ const youtube_redirect = process.env.YOUTUBE_REDIRECT_URI;
 const youtubeAuthEndpoint = "https://accounts.google.com/o/oauth2/v2/auth?";
 
 app.get("/loginYoutube", (req, res) => {
-  var state = generateRandomString(16);
-  res.cookie('youtube_auth_state', state);
 
   res.redirect(youtubeAuthEndpoint +
 		"scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutube%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutubepartner" +
 		"&include_granted_scopes=true" +
-    "&state=" + state +
     "&redirect_uri=" + youtube_redirect +
     "&response_type=token" +
     "&client_id=" + youtube_id
   );
-  //Obs: endpoint "/youtubeCallback" não é necessário
 });
 
 //Setup, SHOUlD ALWAYS be last
