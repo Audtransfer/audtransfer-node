@@ -109,11 +109,7 @@ const deezer_redirect = process.env.DEEZER_APP_REDIRECT;
 const deezer_perms = [
   "basic_access",
   "manage_library",
-  "email",
-  //"offline_access",
-  //"manage_community",
-  //"delete_library",
-  //"listening_history",
+  "email"
 ].join(",");
 
 //Deezer endpoint common
@@ -135,6 +131,81 @@ app.get("/deezerCallback", (req, res) => {
 		var bodyJson = JSON.parse(body);
 		res.redirect("http://localhost:3000/deezer#access_token=" + bodyJson.access_token)
 	})
+});
+
+// DEEZER BACK-END
+const deezerApi = "https://api.deezer.com"
+
+app.get("/deezerUser", (req, res) => {
+	let userEndpoint = `${deezerApi}/user/me?output=json&access_token=${req.query.access}`
+	request.get(userEndpoint, (error, response, body) => {
+		if(error || response.statusCode !== 200) return
+		res.json(JSON.parse(body));
+	})
+})
+
+app.get("/deezerPlaylist", (req, res) => {
+	let userEndpoint = `${deezerApi}/user/${req.query.id}/playlists?output=json&access_token=${req.query.access}`
+	request.get(userEndpoint, (error, response, body) => {
+		if(error || response.statusCode !== 200) return
+		res.json(JSON.parse(body));
+	})
+})
+
+app.get("/deezerAnyPlaylist", (req, res) => {
+	const getPlaylistEndPoint = `${deezerApi}/playlist`;
+	request.get(`${getPlaylistEndPoint}/${req.query.id}`, (error, response, body) => {
+		if(error || response.statusCode !== 200) return
+		res.json(JSON.parse(body));
+	})
+})
+
+app.get("/deezerCreatePlaylist", (req,res) => {
+	let createUrl = `${deezerApi}/user/${req.query.id}/playlists?output=json&access_token=${req.query.access}&title=${req.query.title}`;
+
+	request.post(createUrl, (error, response, body) => {
+		if(error || response.statusCode !== 200) return
+		res.json(JSON.parse(body));
+	})
+})
+
+app.get("/deezerSearchTrack", (req,res) => {
+	let searchUrl = `${deezerApi}/search?q=artist:"${req.query.artist}"track:"${req.query.track}"`
+
+	request.get(searchUrl, (error, response, body) => {
+		if(error || response.statusCode !== 200) return
+		res.json(JSON.parse(body));
+	})
+})
+
+app.get("/deezerAddTrack", (req, res) => {
+	let addUrl = `${deezerApi}/playlist/${req.query.id}/tracks?output=json&access_token=${req.query.access}&songs=${req.query.trackId}`;
+
+	request.post(addUrl, (error,response, body) => {
+		if(error || response.statusCode !== 200) return
+		res.json(JSON.parse(body))
+	})
+})
+
+// ----- YOUTUBE MUSIC ENDPOINTS -----
+
+//variáveis de ambiente Youtube Music
+const youtube_id = process.env.YOUTUBE_CLIENT_ID;
+//const youtube_secret = process.env.YOUTUBE_CLIENT_SECRET; //aparentemente não é necessário para obter access_token
+const youtube_redirect = process.env.YOUTUBE_REDIRECT_URI;
+
+//permissões do Youtube necessárias TODO
+const youtubeAuthEndpoint = "https://accounts.google.com/o/oauth2/v2/auth?";
+
+app.get("/loginYoutube", (req, res) => {
+
+  res.redirect(youtubeAuthEndpoint +
+		"scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutube%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutubepartner" +
+		"&include_granted_scopes=true" +
+    "&redirect_uri=" + youtube_redirect +
+    "&response_type=token" +
+    "&client_id=" + youtube_id
+  );
 });
 
 //Setup, SHOUlD ALWAYS be last
