@@ -18,6 +18,7 @@ const frontEnd = "http://localhost:3000/"
 	
 // ----- SPOTIFY ENDPOINTS -----
 const spotifyAuthEndpoint = "https://accounts.spotify.com/authorize?";
+var stateKey = 'spotify_auth_state';
 const scopes = [
 	"user-read-private",
 	"user-read-email",
@@ -28,37 +29,73 @@ const scopes = [
 	"playlist-modify-public",
 ].join("%20");
 
+const generateRandomString = (length) => {
+	var text = '';
+	var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+	for(var i = 0; i < length; i++) {
+		text += possible.charAt(Math.floor(Math.random() * possible.length));
+	}
+	return text;
+};
+	
 //variáveis de ambiente spotify
 const client_id = process.env.SPOTIFY_CLIENT_ID;
 const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
 const redirect_uri = process.env.SPOTIFY_REDIRECT_URI;
 
 app.get("/loginSpotify", (req, res) => {
-	res.redirect(spotifyAuthEndpoint +
+  var state = generateRandomString(16);
+  res.cookie(stateKey, state);
+
+  res.redirect(spotifyAuthEndpoint +
 		"response_type=code" +
 		"&client_id=" + client_id +
     "&scope=" + scopes +
-    "&redirect_uri=" + redirect_uri
+    "&redirect_uri=" + redirect_uri +
+    "&state=" + state
   );
 })
 
 app.get("/spotifyCallback", (req, res) => {
   var code = req.query.code || null;
-	
-	var authOptions = {
-		url: 'https://accounts.spotify.com/api/token',
-		form: {
-			code: code,
-			redirect_uri: redirect_uri,
-			grant_type: 'authorization_code'
-		},
-		headers: { 'Authorization': 'Basic ' + (Buffer.from(client_id + ':' + client_secret).toString('base64')) },
-		json: true
-	};
-	
-	request.post(authOptions, (error, response, body) => {
-		res.redirect(`${frontEnd}spotify#access_token=${body.access_token}`);
-	});
+  var state = req.query.state || null;
+  var storedState = req.cookies ? req.cookies[stateKey] : null;
+
+  if (state === null || state !== storedState) {
+    res.redirect("/#error=state_mismatch");
+  } 
+	else {
+    res.clearCookie(stateKey);
+    var authOptions = {
+      url: 'https://accounts.spotify.com/api/token',
+      form: {
+        code: code,
+        redirect_uri: redirect_uri,
+        grant_type: 'authorization_code'
+      },
+      headers: { 'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64')) },
+      json: true
+    };
+
+    request.post(authOptions, (error, response, body) => {
+      if (!error && response.statusCode === 200) {
+        var access_token = body.access_token;
+        var refresh_token = body.refresh_token;
+
+        var options = {
+          url: 'https://api.spotify.com/v1/me',
+          headers: { 'Authorization': 'Bearer ' + access_token },
+          json: true
+        };
+
+        request.get(options, (error, response, body) => { console.log(body.id) });
+
+				res.redirect(`${frontEnd}spotify#access_token=${access_token}&refresh_token=${refresh_token}`);
+      } 
+			else { res.redirect(`${frontEnd}spotify#invalid_token`) }
+    });
+  }
 })
 
 // ----- DEEZER ENDPOINTS -----
